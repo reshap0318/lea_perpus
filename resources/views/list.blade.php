@@ -69,16 +69,16 @@
           </div>
           <div id="navbar" class="navbar-collapse collapse">
             <ul id="top-menu" class="nav navbar-nav navbar-right aa-main-nav">
-              <li class="dropdown active">
+              <li class="dropdown">
                <a class="dropdown-toggle" data-toggle="dropdown" href="{{url('/')}}">HOME <span class="caret"></span></a>
                <ul class="dropdown-menu" role="menu">
                  <li><a href="{{url('/')}}">Home</a></li>
-                 <li><a href="#aa-latest-property">Buku Baru</a></li>
-                 <li><a href="#aa-service">Statistik</a></li>
-                 <li><a href="#aa-agents">Tentang Kami</a></li>
+                 <li><a href="{{url('/')}}/#aa-latest-property">Buku Baru</a></li>
+                 <li><a href="{{url('/')}}/#aa-service">Statistik</a></li>
+                 <li><a href="{{url('/')}}/#aa-agents">Tentang Kami</a></li>
                </ul>
              </li>
-              <li><a href="{{url('list-buku')}}">List Buku</a></li>
+              <li class="active"><a href="{{url('list-buku')}}">List Buku</a></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -110,7 +110,7 @@
     <section id="aa-advance-search">
       <div class="container">
         <div class="aa-advance-search-area">
-          {{ Form::open(array('url' => 'carihome', 'class' => 'form')) }}
+          {{ Form::open(array('url' => 'carihome', 'class' => 'form','method' => 'get')) }}
             <div class="aa-advance-search-top">
               <div class="row">
                 <div class="col-md-2">
@@ -171,9 +171,9 @@
       <div class="container">
         <div class="aa-latest-property-area">
           <div class="aa-title">
-            <h2>Buku Terbaru</h2>
+            <h2>List Buku</h2>
             <span></span>
-            <p>Buku Terbaru Yang Ada di lea, Have Fun!!</p>
+            <p>Buku Yang Ada di lea, Have Fun!!</p>
           </div>
           <div class="aa-latest-properties-content">
             <div class="row">
@@ -181,8 +181,11 @@
               <div class="col-md-4">
                 <article class="aa-properties-item">
                   <a href="#" class="aa-properties-item-img">
-                    @if($buku->sampul)
-                      <img src="{{url('img/cover-pict/'.$buku->sampul)}}" alt="img" style="height:250px">
+                    @if($buku->foto)
+                      @php
+                        $link = "http://localhost/silabvbeda/public/img/buku-pict/".$buku->foto."?kategori=".$buku->jenis_id."&&nim=".$buku->mahasiswa_nim;
+                      @endphp
+                      <img src="{{$link}}" alt="img" style="height:250px">
                     @else
                       <img src="{{asset('img/lea.png')}}" alt="img" style="height:250px">
                     @endif
@@ -236,7 +239,7 @@
               <h2>Perpustakaan Mini</h2>
               <span></span>
               <p>Detail Buku</p>
-                <img src="{{asset('img/lea.png')}}" alt="img" style="height:250px">
+                <img id="imgfoto" src="{{asset('img/lea.png')}}" alt="img" style="height:250px">
             </div>
             <br>
             <div class="">
@@ -311,22 +314,7 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" onclick="cek()" class="btn btn-primary">Pinjam</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade bd-example-modal-sm" id="modal-asisten" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body text-center">
-            <button type="button" onclick="pinjamass(1)" class="btn btn-success">Pinjam</button>
-            <button type="button" onclick="pinjamass(0)" class="btn btn-primary">Baca</button>
+            <button type="button" onclick="baca()" class="btn btn-primary">Baca</button>
           </div>
         </div>
       </div>
@@ -364,12 +352,13 @@
       var jenis = document.getElementById('jenis');
       var pembimbing1 = document.getElementById('pembimbing1');
       var pembimbing2 = document.getElementById('pembimbing2');
+      var imgfoto = document.getElementById('imgfoto');
       var server="<?php echo Request::root(); ?>";
       var ids = null;
 
       function detail(id) {
         $.ajax({
-          url: server+'/data-buku/'+id, data: "", dataType: 'json', success: function(rows)
+          url: '{{config('perpus.data_buku')}}'+id, data: "", dataType: 'json', success: function(rows)
             {
               for (var i = 0; i < rows.length; i++) {
                 var row = rows[i];
@@ -379,11 +368,16 @@
                 nim.value = row.mahasiswa_nim;
                 nama.value=row.nama;
                 tahun.value=formatDate(row.tanggal);
+
+                if(row.foto!=null){
+                  imgfoto.src = '{{config('perpus.url_img')}}'+row.foto;
+                }
+
                 konsentrasi_bidang.value=row.konsentrasi_bidang;
                 obj_tmptKp.value=row.obj_tmptKp;
                 jenis.value=row.jenis;
-                pembimbing1.value=row.pembimbing_id_1;
-                pembimbing2.value=row.pembimbing_id_2;
+                pembimbing1.value=row.dosen1;
+                pembimbing2.value=row.dosen2;
                 $('#modal-detail').modal('show');
               }
             }
@@ -394,10 +388,10 @@
         date = Date.parse(date);
         date = new Date(date);
         var monthNames = [
-          "January", "February", "March",
-          "April", "May", "June", "July",
-          "August", "September", "October",
-          "November", "December"
+          "Januari", "Februari", "Maret",
+          "April", "Mei", "Juni", "Juli",
+          "Agustus", "September", "Oktober",
+          "November", "Desember"
         ];
 
         var day = date.getDate();
@@ -407,64 +401,33 @@
         return day + ' ' + monthNames[monthIndex] + ' ' + year;
       }
 
-      function cek() {
-        console.log(server+'/cek/?nim='+fnim.value+'&&id='+ids);
-        $.ajax({
-          url: server+'/cek/?nim='+fnim.value+'&&id='+ids, data: "", dataType: 'json', success: function(rows)
-            {
-              if(rows==0){
-                //gagal bukan asiste, tapi berhasil meminjam buku
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.success('Berhasil Meminjam Buku', 'Berhasil', {timeOut: 5000});
-              }else if(rows==1){
-                //pesan berhasil, dan asisten
-                $('#modal-asisten').modal('show');
-              }else if(rows==2){
-                //pesan gagal karna data kosong
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Boleh Kosong', 'warning', {timeOut: 5000});
-              }else if(rows==3){
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Ditemukan, Pastikan NIM yang Anda masukan Benar', 'warning', {timeOut: 5000});
-              }else if(rows==4){
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.warning('Buku Sudah dipinjam, Silakan Cari Buku Lain', 'warning', {timeOut: 5000});
+      function baca() {
+        console.log(server+'/cek/'+fnim.value+'/'+ids);
+        toastr.options.progressBar = true;
+        if(fnim.value == null || fnim.value == ''){
+          //pesan gagal karna data kosong
+          toastr.warning('Nim Tidak Boleh Kosong', 'warning', {timeOut: 5000});
+        }else{
+          $.ajax({
+            url: server+'/cek/'+fnim.value+'/'+ids, data: "", dataType: 'json', success: function(rows)
+              {
+                for (var i = 0; i < rows.length; i++) {
+                  var row = rows[i];
+                  if(row.status == 'Info'){
+                    toastr.info(row.pesan, 'informasi', {timeOut: 5000});
+                  }else if(row.status == 'Berhasil'){
+                    location.reload();
+                    toastr.success(row.pesan, 'Berhasil', {timeOut: 5000});
+                  }else if(row.status == 'Error'){
+                    toastr.error(row.pesan, 'error', {timeOut: 5000});
+                  }else if(row.status == 'Warning'){
+                    toastr.warning(row.pesan, 'warning', {timeOut: 5000});
+                  }
+                }
+                console.log(rows);
               }
-              console.log(rows);
-            }
-          });
-      }
-
-      function pinjamass(status) {
-        console.log(server+'/cek/?nim='+fnim.value+'&&id='+ids+'&&status='+status);
-        $.ajax({
-          url: server+'/cek/?nim='+fnim.value+'&&id='+ids+'&&status='+status, data: "", dataType: 'json', success: function(rows)
-            {
-              if(rows==0){
-                //gagal bukan asiste, tapi berhasil meminjam buku
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.success('Berhasil Meminjam Buku', 'Berhasil', {timeOut: 5000});
-              }else if(rows==1){
-                //pesan berhasil, dan asisten
-                $('#modal-asisten').modal('show');
-              }else if(rows==2){
-                //pesan gagal karna data kosong
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Boleh Kosong', 'warning', {timeOut: 5000});
-              }else if(rows==3){
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Ditemukan, Pastikan NIM yang Anda masukan Benar', 'warning', {timeOut: 5000});
-              }else if(rows==4){
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.warning('Buku Sudah dipinjam, Silakan Cari Buku Lain', 'warning', {timeOut: 5000});
-              }
-              console.log(rows);
-            }
-          });
+            });
+        }
       }
   </script>
 

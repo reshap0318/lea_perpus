@@ -40,6 +40,12 @@
           $cetak = substr($kalimat,0,75);
           echo $cetak.'...';
       }
+
+      function asbatas($kalimat)
+      {
+          $cetak = substr($kalimat,0,20);
+          echo $cetak;
+      }
     ?>
     <!-- Pre Loader -->
     <div id="aa-preloader-area">
@@ -72,7 +78,7 @@
               <li class="dropdown active">
                <a class="dropdown-toggle" data-toggle="dropdown" href="{{url('/')}}">HOME <span class="caret"></span></a>
                <ul class="dropdown-menu" role="menu">
-                 <li><a href="{{url('/')}}">Home</a></li>
+                 <li><a href="#aa-slider">Home</a></li>
                  <li><a href="#aa-latest-property">Buku Baru</a></li>
                  <li><a href="#aa-service">Statistik</a></li>
                  <li><a href="#aa-agents">Tentang Kami</a></li>
@@ -85,6 +91,7 @@
       </nav>
     </section>
     <!-- End menu section -->
+
 
     <!-- Start slider  -->
     <section id="aa-slider">
@@ -110,7 +117,7 @@
     <section id="aa-advance-search">
       <div class="container">
         <div class="aa-advance-search-area">
-          {{ Form::open(array('url' => 'carihome', 'class' => 'form')) }}
+          {{ Form::open(array('url' => 'carihome', 'class' => 'form','method' => 'get')) }}
             <div class="aa-advance-search-top">
               <div class="row">
                 <div class="col-md-2">
@@ -181,8 +188,11 @@
               <div class="col-md-4">
                 <article class="aa-properties-item">
                   <a href="#" class="aa-properties-item-img">
-                    @if($buku->sampul)
-                      <img src="{{url('img/cover-pict/'.$buku->sampul)}}" alt="img" style="height:250px">
+                    @if($buku->foto)
+                      @php
+                        $link = "http://localhost/silabvbeda/public/img/buku-pict/".$buku->foto."?kategori=".$buku->jenis_id."&&nim=".$buku->mahasiswa_nim;
+                      @endphp
+                      <img src="{{$link}}" alt="img" style="height:250px">
                     @else
                       <img src="{{asset('img/lea.png')}}" alt="img" style="height:250px">
                     @endif
@@ -198,7 +208,7 @@
                       </center>
                     </div>
                     <div class="aa-properties-about" style="height:130px;position: static;">
-                      <h3> <a href="#">{{$buku->mahasiswa->nama}}</a> </h3>
+                      <h3> <a href="javascript:void(0)" onclick="detail({{$buku->id}})">{{$buku->mahasiswa->nama}}</a> </h3>
                       <table style="width:100%">
                         <tr>
                           <td style="text-align:center"><b>Judul</b> </td>
@@ -223,7 +233,7 @@
     <!-- / Latest property -->
 
     <!-- Service section -->
-    <section id="aa-service">
+    <!-- <section id="aa-service">
       <div class="container">
         <div class="row">
           <div class="col-md-12">
@@ -233,7 +243,6 @@
                 <span></span>
                 <p>Statistik Ini Dikelompokkan perbulannya</p>
               </div>
-              <!-- service content -->
               <div class="aa-service-content">
                 <div class="row">
                   <div class="col-md-3">
@@ -286,7 +295,7 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- / Service section -->
 
     <!-- Our Agent Section-->
@@ -307,14 +316,17 @@
                   <li>
                     <div class="aa-single-agents">
                       <div class="aa-agents-img">
-                        @if(optional($asis->mahasiswa)->avatar)
-                          <img src="{{url('img/profile-pict/'.optional($asis->mahasiswa)->avatar)}}" alt="agent member image" height="300px">
+                        @if($asis->mahasiswa->avatar)
+                          @php
+                            $links = "http://localhost/silabvbeda/public/img/profile-pict/".$asis->mahasiswa->avatar;
+                          @endphp
+                          <img src="{{$links}}" alt="agent member image" height="300px">
                         @else
                           <img src="{{asset('img/lea.png')}}" alt="agent member image" height="300px">
                         @endif
                       </div>
                       <div class="aa-agetns-info">
-                        <h4><a href="#">{{optional($asis->mahasiswa)->nama}}</a></h4>
+                        <h4><a href="#">{{asbatas(optional($asis->mahasiswa)->nama)}}</a></h4>
                         <span>@if(count($asis->mahasiswa->jabatan)>0)
                           {{optional($asis->mahasiswa->jabatan[0])->name}}
                           @else
@@ -353,7 +365,7 @@
               <h2>Perpustakaan Mini</h2>
               <span></span>
               <p>Detail Buku</p>
-                <img id="imgsampul" src="{{asset('img/lea.png')}}" alt="img" style="height:250px">
+                <img id="imgfoto" src="{{asset('img/lea.png')}}" alt="img" style="height:250px">
             </div>
             <br>
             <div class="">
@@ -428,22 +440,7 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" onclick="cek()" class="btn btn-primary">Pinjam</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade bd-example-modal-sm" id="modal-asisten" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body text-center">
-            <button type="button" onclick="pinjamass(1)" class="btn btn-success">Pinjam</button>
-            <button type="button" onclick="pinjamass(0)" class="btn btn-primary">Baca</button>
+            <button type="button" onclick="baca()" class="btn btn-primary">Baca</button>
           </div>
         </div>
       </div>
@@ -481,13 +478,13 @@
       var jenis = document.getElementById('jenis');
       var pembimbing1 = document.getElementById('pembimbing1');
       var pembimbing2 = document.getElementById('pembimbing2');
-      var imgsampul = document.getElementById('imgsampul');
+      var imgfoto = document.getElementById('imgfoto');
       var server="<?php echo Request::root(); ?>";
       var ids = null;
 
       function detail(id) {
         $.ajax({
-          url: 'http://localhost/silabvbeda/public/data-buku/'+id, data: "", dataType: 'json', success: function(rows)
+          url: '{{config('perpus.data_buku')}}'+id, data: "", dataType: 'json', success: function(rows)
             {
               for (var i = 0; i < rows.length; i++) {
                 var row = rows[i];
@@ -499,7 +496,7 @@
                 tahun.value=formatDate(row.tanggal);
 
                 if(row.foto!=null){
-                  imgsampul.src = 'http://localhost/silabvbeda/public/img/buku-pict/'+row.foto+'?kategori='+row.jenis_id+'&&nim='+row.mahasiswa_nim;
+                  imgfoto.src = '{{config('perpus.url_img')}}'+row.foto;
                 }
 
                 konsentrasi_bidang.value=row.konsentrasi_bidang;
@@ -517,10 +514,10 @@
         date = Date.parse(date);
         date = new Date(date);
         var monthNames = [
-          "January", "February", "March",
-          "April", "May", "June", "July",
-          "August", "September", "October",
-          "November", "December"
+          "Januari", "Februari", "Maret",
+          "April", "Mei", "Juni", "Juli",
+          "Agustus", "September", "Oktober",
+          "November", "Desember"
         ];
 
         var day = date.getDate();
@@ -530,64 +527,33 @@
         return day + ' ' + monthNames[monthIndex] + ' ' + year;
       }
 
-      function cek() {
-        console.log(server+'/cek/?nim='+fnim.value+'&&id='+ids);
-        $.ajax({
-          url: server+'/cek/?nim='+fnim.value+'&&id='+ids, data: "", dataType: 'json', success: function(rows)
-            {
-              if(rows==0){
-                //gagal bukan asiste, tapi berhasil meminjam buku
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.success('Berhasil Meminjam Buku', 'Berhasil', {timeOut: 5000});
-              }else if(rows==1){
-                //pesan berhasil, dan asisten
-                $('#modal-asisten').modal('show');
-              }else if(rows==2){
-                //pesan gagal karna data kosong
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Boleh Kosong', 'warning', {timeOut: 5000});
-              }else if(rows==3){
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Ditemukan, Pastikan NIM yang Anda masukan Benar', 'warning', {timeOut: 5000});
-              }else if(rows==4){
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.warning('Buku Sudah dipinjam, Silakan Cari Buku Lain', 'warning', {timeOut: 5000});
+      function baca() {
+        console.log(server+'/cek/'+fnim.value+'/'+ids);
+        toastr.options.progressBar = true;
+        if(fnim.value == null || fnim.value == ''){
+          //pesan gagal karna data kosong
+          toastr.warning('Nim Tidak Boleh Kosong', 'warning', {timeOut: 5000});
+        }else{
+          $.ajax({
+            url: server+'/cek/'+fnim.value+'/'+ids, data: "", dataType: 'json', success: function(rows)
+              {
+                for (var i = 0; i < rows.length; i++) {
+                  var row = rows[i];
+                  if(row.status == 'Info'){
+                    toastr.info(row.pesan, 'informasi', {timeOut: 5000});
+                  }else if(row.status == 'Berhasil'){
+                    location.reload();
+                    toastr.success(row.pesan, 'Berhasil', {timeOut: 5000});
+                  }else if(row.status == 'Error'){
+                    toastr.error(row.pesan, 'error', {timeOut: 5000});
+                  }else if(row.status == 'Warning'){
+                    toastr.warning(row.pesan, 'warning', {timeOut: 5000});
+                  }
+                }
+                console.log(rows);
               }
-              console.log(rows);
-            }
-          });
-      }
-
-      function pinjamass(status) {
-        console.log(server+'/cek/?nim='+fnim.value+'&&id='+ids+'&&status='+status);
-        $.ajax({
-          url: server+'/cek/?nim='+fnim.value+'&&id='+ids+'&&status='+status, data: "", dataType: 'json', success: function(rows)
-            {
-              if(rows==0){
-                //gagal bukan asiste, tapi berhasil meminjam buku
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.success('Berhasil Meminjam Buku', 'Berhasil', {timeOut: 5000});
-              }else if(rows==1){
-                //pesan berhasil, dan asisten
-                $('#modal-asisten').modal('show');
-              }else if(rows==2){
-                //pesan gagal karna data kosong
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Boleh Kosong', 'warning', {timeOut: 5000});
-              }else if(rows==3){
-                toastr.options.progressBar = true;
-                toastr.warning('Nim Tidak Ditemukan, Pastikan NIM yang Anda masukan Benar', 'warning', {timeOut: 5000});
-              }else if(rows==4){
-                location.reload();
-                toastr.options.progressBar = true;
-                toastr.warning('Buku Sudah dipinjam, Silakan Cari Buku Lain', 'warning', {timeOut: 5000});
-              }
-              console.log(rows);
-            }
-          });
+            });
+        }
       }
   </script>
 

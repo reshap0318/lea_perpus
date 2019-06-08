@@ -39,7 +39,7 @@ class transaksiController extends Controller
         }
 
         if($request->tanggal){
-          $bukus = $bukus->Where('tanggal',$request->tanggal);
+          $bukus = $bukus->Whereyear('tanggal',$request->tanggal);
         }
 
         if($request->dosen){
@@ -54,7 +54,7 @@ class transaksiController extends Controller
         // dd($bukus);
         if($bukus->isEmpty()){
           toast()->warning('Buku yang di cari Kosong', 'Buku Tidak Ketemu');
-          return redirect()->back();
+          $bukus = buku::all();
         }
         // dd([$bukus,$request->all()]);
         $tahun = buku::select(DB::RAW('year(tanggal) as tahun'))->distinct()->orderby('tahun','asc')->pluck('tahun','tahun');
@@ -66,61 +66,70 @@ class transaksiController extends Controller
 
     public function list()
     {
-        $bukus = buku::orderby('judul','asc')->get();
+        $bukus = buku::orderby('tanggal','desc')->get();
         $tahun = buku::select(DB::RAW('year(tanggal) as tahun'))->distinct()->orderby('tahun','asc')->pluck('tahun','tahun');
         $dosen = DB::table('dosen')->get();
         $jenis = DB::table('inventaris_jenis')->where('kelompok_id',1)->get();
         return view('list',compact('bukus','tahun','dosen','jenis'));
     }
 
-    public function data($id)
-    {
-        $bukus = buku::select('buku.*','users.nama')->join('users','buku.mahasiswa_nim','users.nim')->where('buku.id',$id)->first();
-        return [$bukus];
-    }
+    // public function data($id)
+    // {
+    //     $bukus = buku::select('buku.*','users.nama')->join('users','buku.mahasiswa_nim','users.nim')->where('buku.id',$id)->first();
+    //     return [$bukus];
+    // }
 
-    public function cek(Request $request)
+    public function cek($nim, $id)
     {
-      try {
-        if($request->nim){
-          $asisten = asisten::where('nim',"$request->nim")->first();
-          if($asisten){
-            if($request->status == '0'){
-              return $this->pinjam($request->nim, $request->id,$request->status,'Membaca');
-            }elseif($request->status == 1){
-              return $this->pinjam($request->nim, $request->id,$request->status,'Meminjam');
-            }else{
-              return 1; //berhasil
-            }
-
-          }else{
-            return $this->pinjam($request->nim, $request->id,0,'Membaca');
+        try {
+          $user = user::where('nim',$nim)->first();
+          if(!$user){
+            return [
+              [
+                'status' => 'Info',
+                'pesan' => 'Silakan Hubungi Asisten LEA Jika Aplikasi Ini Anda Rasa Bermasalah',
+              ],
+              [
+                'status' => 'Warning',
+                'pesan' => 'NIM Anda tidak Ditemukan, Silakan Coba Kembali',
+              ]
+            ];
           }
+
+          $buku = buku::find($id);
+          if(!$buku){
+            return [
+              [
+                'status' => 'Warning',
+                'pesan' => 'Buku yang anda Cari Tidak diTemukan',
+              ]
+            ];
+          }
+
+          $baca = new transaksi;
+          $baca->nim = $nim;
+          $baca->buku_id = $id;
+          $baca->status = 1;
+          $baca->save();
+          return [
+            [
+              'status' => 'Berhasil',
+              'pesan' => 'Berhasil Membaca Buku di Perpustakaan LEA',
+            ]
+          ];
+        } catch (\Exception $e) {
+          return [
+            [
+              'status' => 'Error',
+              'pesan' => 'Terjadi Error Saat Menyimpan Data',
+            ],
+            [
+              'status' => 'Error',
+              'pesan' => $e,
+            ],
+          ];
         }
-        return 2; //gagal karna data kosong
-      } catch (\Exception $e) {
-        return 5; //eror
-      }
+
     }
 
-    public function pinjam($nim, $id, $status, $pesan)
-    {
-        $cekbuku = transaksi::where('buku_id',$id)->where('status',1)->first();
-        if($cekbuku){
-          toast()->warning('Buku Sudah dipinjam, Silakan Cari Buku Lain', 'warning');
-          return 4;
-        }else{
-          try {
-            $pinjam = new transaksi;
-            $pinjam->nim = $nim;
-            $pinjam->buku_id = $id;
-            $pinjam->status = $status;
-            $pinjam->save();
-            toast()->success('Berhasil '.$pesan.' Buku', 'Berhasil');
-            return 0; //gagal dikarenakan bukan Asisten, dan berhasil meminjam buku
-          } catch (\Exception $e) {
-            return 3;
-          }
-        }
-    }
 }
